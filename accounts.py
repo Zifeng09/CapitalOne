@@ -7,18 +7,21 @@ class accounts():
         self.rewards=rewards
         self.balance=balance
         self.customer_id=customer_id
-    def createAccounts(self):
-        payload = {
+        self.payload = {
             'type':self.type,
             'nickname':self.nickname,
             'rewards':self.rewards,
             'balance':self.balance,
 
-            }
+        }
 
+        # create an account
         client = nessie.NessieClient('682bc88f420a505fb5d69090d0b8c924', 'customer');
-        print(client.api_call('customers/{}/accounts'.format(self.customer_id),"POST",payload))
+        self.account_data = client.api_call('customers/{}/accounts'.format(customer_id),"POST", self.payload)['content']['objectCreated']
+        self._id = self.account_data['_id']
 
-##TestCode
-accounts = accounts('Credit Card','credit cards',500,5000,'58ea1e88ceb8abe24250d1d3')
-accounts.createAccounts()
+    def _id(self):
+        return self._id
+
+    def data(self):
+        return self.account_data

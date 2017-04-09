@@ -7,9 +7,7 @@ class customers():
         self.city = city
         self.state = state
         self.zip=zip
-
-    def createUser(self):
-        payload= {
+        self.payload= {
             "first_name":"LL",
             "last_name":'lll',
             "address":
@@ -21,5 +19,11 @@ class customers():
             }
         }
         client = nessie.NessieClient('682bc88f420a505fb5d69090d0b8c924','customer');
-        print(client.api_call("customers", "POST", payload))
+        self.customer_data = client.api_call("customers", "POST", self.payload)['content']['objectCreated']
+        self._id = self.customer_data['_id']
 
+    def _id(self):
+        return self._id
+
+    def data(self):
+        return self.customer_data
