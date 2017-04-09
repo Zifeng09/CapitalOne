@@ -7,7 +7,10 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-
+from bs4 import BeautifulSoup
+from urllib import request
+from PyQt5.QtGui import QDoubleValidator
+import urllib.request, json
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -30,9 +33,12 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
-        self.textEdit = QtWidgets.QTextEdit(self.centralWidget)
+        self.textEdit = QtWidgets.QLineEdit(self.centralWidget)
         self.textEdit.setGeometry(QtCore.QRect(70, 50, 61, 16))
         self.textEdit.setObjectName("textEdit")
+        self.textEdit.textChanged.connect(self.usdtobitcoin)
+        self.textEdit.setValidator(QDoubleValidator(0.000001,99999.999999,6))
+
         self.label_3 = QtWidgets.QLabel(self.centralWidget)
         self.label_3.setGeometry(QtCore.QRect(10, 90, 60, 16))
         self.label_3.setText("")
@@ -48,14 +54,20 @@ class Ui_MainWindow(object):
         self.label_4.setObjectName("label_4")
         self.label_5 = QtWidgets.QLabel(self.centralWidget)
         self.label_5.setGeometry(QtCore.QRect(10, 170, 60, 16))
+
+        self.priceLabel = QtWidgets.QLabel(self.centralWidget)
+        self.priceLabel.setGeometry(QtCore.QRect(400,10,200,100))
+        self.priceLabel.setText("$ "+ str(self.bitcoinPriceGrab())+"/Bit")
         font = QtGui.QFont()
         font.setFamily("Helvetica")
         font.setPointSize(13)
         self.label_5.setFont(font)
         self.label_5.setObjectName("label_5")
-        self.textEdit_2 = QtWidgets.QTextEdit(self.centralWidget)
+        self.textEdit_2 = QtWidgets.QLineEdit(self.centralWidget)
         self.textEdit_2.setGeometry(QtCore.QRect(70, 170, 61, 16))
         self.textEdit_2.setObjectName("textEdit_2")
+        self.textEdit_2.setValidator(QDoubleValidator(0.01, 999999.99, 2))
+
         self.label_6 = QtWidgets.QLabel(self.centralWidget)
         self.label_6.setGeometry(QtCore.QRect(140, 50, 60, 16))
         font = QtGui.QFont()
@@ -65,6 +77,10 @@ class Ui_MainWindow(object):
         self.textEdit_3 = QtWidgets.QTextEdit(self.centralWidget)
         self.textEdit_3.setGeometry(QtCore.QRect(180, 50, 61, 16))
         self.textEdit_3.setObjectName("textEdit_3")
+        self.textEdit_3.textChanged.connect(self.bitcointousd)
+        self.textEdit_3.setReadOnly(True)
+
+
         self.label_7 = QtWidgets.QLabel(self.centralWidget)
         self.label_7.setGeometry(QtCore.QRect(250, 50, 60, 16))
         font = QtGui.QFont()
@@ -77,9 +93,13 @@ class Ui_MainWindow(object):
         font.setFamily("Helvetica")
         self.label_8.setFont(font)
         self.label_8.setObjectName("label_8")
+
         self.textEdit_4 = QtWidgets.QTextEdit(self.centralWidget)
         self.textEdit_4.setGeometry(QtCore.QRect(180, 170, 61, 16))
         self.textEdit_4.setObjectName("textEdit_4")
+        self.textEdit_4.setReadOnly(True)
+
+
         self.label_9 = QtWidgets.QLabel(self.centralWidget)
         self.label_9.setGeometry(QtCore.QRect(250, 170, 60, 16))
         font = QtGui.QFont()
@@ -92,15 +112,22 @@ class Ui_MainWindow(object):
         self.logopic.setPixmap(QtGui.QPixmap("../Desktop/Logo2.png"))
         self.logopic.setScaledContents(True)
         self.logopic.setObjectName("logopic")
-        self.pushButton = QtWidgets.QPushButton(self.centralWidget)
-        self.pushButton.setGeometry(QtCore.QRect(70, 80, 81, 21))
-        self.pushButton.setObjectName("pushButton")
-        self.pushButton_2 = QtWidgets.QPushButton(self.centralWidget)
-        self.pushButton_2.setGeometry(QtCore.QRect(70, 200, 81, 21))
+        self.buyBtn = QtWidgets.QPushButton(self.centralWidget)
+        self.buyBtn.setGeometry(QtCore.QRect(70, 80, 81, 21))
+        self.buyBtn.setObjectName("pushButton")
+        #self.buyBtn.click().connect(self.buyBitCoin)
+
+        self.priceLabel = QtWidgets.QLabel(self.centralWidget)
+        self.priceLabel.setGeometry(QtCore.QRect(400,120,400,100))
+        self.perUSD = round(1/self.bitcoinPriceGrab(),8)
+        self.priceLabel.setText("$B"+ str(self.perUSD)+"/USD")
+
+        self.sellBtn = QtWidgets.QPushButton(self.centralWidget)
+        self.sellBtn.setGeometry(QtCore.QRect(70, 200, 81, 21))
         font = QtGui.QFont()
         font.setFamily("Helvetica")
-        self.pushButton_2.setFont(font)
-        self.pushButton_2.setObjectName("pushButton_2")
+        self.sellBtn.setFont(font)
+        self.sellBtn.setObjectName("pushButton_2")
         MainWindow.setCentralWidget(self.centralWidget)
         self.menuBar = QtWidgets.QMenuBar(MainWindow)
         self.menuBar.setGeometry(QtCore.QRect(0, 0, 400, 22))
@@ -130,10 +157,36 @@ class Ui_MainWindow(object):
         self.label_7.setText(_translate("MainWindow", "BTC"))
         self.label_8.setText(_translate("MainWindow", "BTC="))
         self.label_9.setText(_translate("MainWindow", "USD"))
-        self.pushButton.setText(_translate("MainWindow", "Buy"))
-        self.pushButton_2.setText(_translate("MainWindow", "Sell"))
+        self.buyBtn.setText(_translate("MainWindow", "Buy"))
+        self.sellBtn.setText(_translate("MainWindow", "Sell"))
         self.menuCapital_One_Cryptocurrency_Exchange.setTitle(_translate("MainWindow", "Capital One Cryptocurrency Exchange"))
 
+    def usdtobitcoin(self):
+        #set the bitcoin
+        total = float(self.textEdit.text())/self.bitcoinPriceGrab()
+        self.textEdit_3.setText(str(total))#put something in here
+        print("USD to bitcoin")
+
+    def bitcoinPriceGrab(self):
+        with urllib.request.urlopen("https://blockchain.info/ticker") as url:
+            data = json.loads(url.read().decode())
+
+        return data['USD']['15m']
+        total = float(self.textEdit2.text()) * self.bitcoinPriceGrab()
+        self.textEdit_4.setText(str(total))  # put something in here
+
+    def bitcointousd(self):
+        #set usd
+        num = self.bitcoinPriceGrab()
+        self.textEdit_2.setText()#put something in here
+        print("Bitcoin to usd!")
+
+    def buyBitcoin(self):
+        MainWindow.hide()
+        #pass
+
+    def sellBitcoin(self):
+        pass
 
 if __name__ == "__main__":
     import sys
