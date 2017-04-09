@@ -109,7 +109,7 @@ class Ui_MainWindow(object):
         self.logopic = QtWidgets.QLabel(self.centralWidget)
         self.logopic.setGeometry(QtCore.QRect(280, 0, 111, 51))
         self.logopic.setText("")
-        self.logopic.setPixmap(QtGui.QPixmap("../Desktop/Logo2.png"))
+        self.logopic.setPixmap(QtGui.QPixmap("/Users/zifengxia/Desktop/Logo2.png"))
         self.logopic.setScaledContents(True)
         self.logopic.setObjectName("logopic")
         self.buyBtn = QtWidgets.QPushButton(self.centralWidget)
@@ -167,6 +167,12 @@ class Ui_MainWindow(object):
         self.textEdit_3.setText(str(total))#put something in here
         print("USD to bitcoin")
 
+    def bitcointousd(self):
+        #set the bitcoin
+        total = float(self.textEdit.text())*self.bitcoinPriceGrab()
+        self.textEdit_4.setText(str(total))#put something in here
+        print("bitcoin to USD")
+
     def bitcoinPriceGrab(self):
         with urllib.request.urlopen("https://blockchain.info/ticker") as url:
             data = json.loads(url.read().decode())
@@ -175,11 +181,8 @@ class Ui_MainWindow(object):
         total = float(self.textEdit2.text()) * self.bitcoinPriceGrab()
         self.textEdit_4.setText(str(total))  # put something in here
 
-    def bitcointousd(self):
-        #set usd
-        num = self.bitcoinPriceGrab()
-        self.textEdit_2.setText()#put something in here
-        print("Bitcoin to usd!")
+
+
 
     def buyBitcoin(self):
         MainWindow.hide()
